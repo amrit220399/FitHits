@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "8046834132",
+    "firebase_url": "https://fithits-2f7b1.firebaseio.com",
+    "project_id": "fithits-2f7b1",
+    "storage_bucket": "fithits-2f7b1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:8046834132:android:72af06cb2208f661",
+        "android_client_info": {
+          "package_name": "com.apsinnovations.fithits"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "8046834132-j1vdjdf8m0a9acgu0tus99ldo3no6bck.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.apsinnovations.fithits",
+            "certificate_hash": "db3d9bc3493a01ca7958a7af2aec26b220a1d4e6"
+          }
+        },
+        {
+          "client_id": "8046834132-6rd6oqf1usr41t0vk815unhnfbb5g6e6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpimZR_0b5hAvFw--l0jBVWpnnwCc7gWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "8046834132-6rd6oqf1usr41t0vk815unhnfbb5g6e6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
