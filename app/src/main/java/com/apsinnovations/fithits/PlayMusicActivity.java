@@ -1,12 +1,9 @@
 package com.apsinnovations.fithits;
 
-
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
@@ -17,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -24,17 +22,16 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class PlayMusicActivity extends AppCompatActivity implements View.OnClickListener {
 public static int oneTimeOnly = 0;
-ImageView play,pause,stop,next,prev,cover;
+ImageView play,stop,next,prev,cover,favourites,shuffle,repeat;
 TextView txtmusic,txtartist,txtinittime,txtendtime;
 Song song;
 MediaPlayer mediaPlayer;
@@ -42,8 +39,11 @@ ArrayList<Song> songs;
 NotificationManager notificationManager;
 Notification notification;
 NotificationCompat.Builder builder;
-ActionReceiver actionReceiver;
+MyNotificationReceiver myNotificationReceiver;
 Animation aniRotate;
+boolean playing,FavUnfav,shuffling,repeating;
+
+    NotificationCompat.Action action;
 private double startTime = 0;
 private double finalTime = 0;
 private SeekBar seekbar;
@@ -52,51 +52,87 @@ private Handler myHandler = new Handler();
 private Runnable UpdateSongTime = new Runnable() {
         public void run() {
             startTime = mediaPlayer.getCurrentPosition();
-            txtinittime.setText(String.format("%d:%d",
+            txtinittime.setText(String.format("%02d:%02d",
                     TimeUnit.MILLISECONDS.toMinutes((long) startTime),
                     TimeUnit.MILLISECONDS.toSeconds((long) startTime) -
                             TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.
                                     toMinutes((long) startTime)))
             );
             seekbar.setProgress((int)startTime);
-            myHandler.postDelayed(this, 100);
+            myHandler.postDelayed(this, 0);
         }
     };
 
 @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_play_music);
-        aniRotate = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.rotate);
-        initViews();
-        getSupportActionBar().hide();
-        showNotification();
+            setContentView(R.layout.activity_play_music_2);
+            aniRotate = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate);
+            initializecontrols();
+             initViews();
+            getSupportActionBar().hide();
+            showNotification();
+
+    }
+    void initializecontrols(){
+    shuffling=false;
+    repeating=false;
+    FavUnfav=false;
     }
 
     void initViews(){
         play=findViewById(R.id.play);
-        pause=findViewById(R.id.pause);
+        //pause=findViewById(R.id.pause);
         stop=findViewById(R.id.stop);
         next=findViewById(R.id.next);
         prev=findViewById(R.id.previous);
+        favourites=findViewById(R.id.favourites);
+        repeat=findViewById(R.id.repeat);
+        shuffle=findViewById(R.id.shuffle);
         cover=findViewById(R.id.cover);
         txtinittime=findViewById(R.id.starttime);
         txtendtime=findViewById(R.id.endtime);
-        play.setBackgroundResource(R.drawable.ic_play_arrow_black_24dp);
-        pause.setBackgroundResource(R.drawable.ic_pause_black_24dp);
-        stop.setBackgroundResource(R.drawable.ic_stop_black_24dp);
-        next.setBackgroundResource(R.drawable.ic_skip_next_black_24dp);
-        prev.setBackgroundResource(R.drawable.ic_skip_previous_black_24dp);
+//        play.setBackgroundResource(R.drawable.ic_play_arrow_black_24dp);
+//        pause.setBackgroundResource(R.drawable.ic_pause_black_24dp);
+//        stop.setBackgroundResource(R.drawable.ic_stop_black_24dp);
+//        next.setBackgroundResource(R.drawable.ic_skip_next_black_24dp);
+//        prev.setBackgroundResource(R.drawable.ic_skip_previous_black_24dp);
+//        play.setBackgroundResource(R.drawable.icon_play);
+        //pause.setBackgroundResource(R.drawable.icon_pause);
+//        stop.setBackgroundResource(R.drawable.icon_stop);
+//        next.setBackgroundResource(R.drawable.icon_next);
+//        prev.setBackgroundResource(R.drawable.icon_prev);
 
-        pause.setVisibility(View.INVISIBLE);
-        stop.setVisibility(View.INVISIBLE);
+//        pause.setVisibility(View.INVISIBLE);
+//        stop.setVisibility(View.INVISIBLE);
+        stop.setEnabled(false);
 
         txtmusic=findViewById(R.id.musicname);
         txtartist=findViewById(R.id.artist_name);
 
         mediaPlayer = new MediaPlayer();
         seekbar = findViewById(R.id.seekBar);
-        seekbar.setClickable(false);
+//        seekbar.setClickable(false);
+      seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+          @Override
+          public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+              if(b==true) {
+                  mediaPlayer.seekTo(i);
+                  myHandler.postDelayed(UpdateSongTime, 0);
+              }
+          }
+
+          @Override
+          public void onStartTrackingTouch(SeekBar seekBar) {
+
+          }
+
+          @Override
+          public void onStopTrackingTouch(SeekBar seekBar) {
+
+          }
+      });
+
 
         Intent rcv=getIntent();
         song=new Song();
@@ -113,6 +149,8 @@ private Runnable UpdateSongTime = new Runnable() {
        if(song.albumpath!=null) {
            Drawable img = Drawable.createFromPath(song.albumpath);
            cover.setImageDrawable(img);
+       }else{
+           cover.setImageResource(R.mipmap.ic_launcher_round);
        }
 
        txtmusic.setText(song.title);
@@ -120,67 +158,101 @@ private Runnable UpdateSongTime = new Runnable() {
 
        try {
             mediaPlayer.setDataSource(""+song.Location);
-            mediaPlayer.prepare();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+       try{
+           mediaPlayer.prepare();
+       }catch (Exception e){
+           e.printStackTrace();
+       }
 
+        playing=false;
         play.setOnClickListener(this);
-        pause.setOnClickListener(this);
+        //pause.setOnClickListener(this);
         stop.setOnClickListener(this);
         next.setOnClickListener(this);
         prev.setOnClickListener(this);
+        favourites.setOnClickListener(this);
+        shuffle.setOnClickListener(this);
+        repeat.setOnClickListener(this);
 
-        actionReceiver=new ActionReceiver();
+        myNotificationReceiver=new MyNotificationReceiver(this);
         IntentFilter filter = new IntentFilter();
         filter.addAction("play");
-        LocalBroadcastManager.getInstance(this).registerReceiver(actionReceiver, filter);
+        filter.addAction("prev");
+        filter.addAction("next");
+        filter.addAction("pause");
+//        filter.addAction("activity");
+        registerReceiver(myNotificationReceiver,filter);
     }
-
     @Override
     public void onClick(View view) {
     int id=view.getId();
         if(id==R.id.play){
-            if(!mediaPlayer.isPlaying()){
-            mediaPlayer.start();}
-            mediaPlayer.setLooping(true);
-            startTime = mediaPlayer.getCurrentPosition();
-            finalTime = mediaPlayer.getDuration();
-            cover.startAnimation(aniRotate);
-           // aniRotate.setDuration((long)finalTime);
-            if (oneTimeOnly == 0) {
-                seekbar.setMax((int) finalTime);
-                oneTimeOnly = 1;
+            if(playing==false) {
+                if (!mediaPlayer.isPlaying()) {
+                    mediaPlayer.start();
+                }
+                mediaPlayer.setLooping(true);
+                startTime = mediaPlayer.getCurrentPosition();
+                finalTime = mediaPlayer.getDuration();
+                cover.startAnimation(aniRotate);
+                // aniRotate.setDuration((long)finalTime);
+                if (oneTimeOnly == 0) {
+                    seekbar.setMax((int) finalTime);
+                    myHandler.postDelayed(UpdateSongTime, 0);
+                    oneTimeOnly = 1;
+                }
+                txtinittime.setText(String.format("%02d:%02d",
+                        TimeUnit.MILLISECONDS.toMinutes((long) startTime),
+                        TimeUnit.MILLISECONDS.toSeconds((long) startTime) -
+                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes((long)
+                                        startTime)))
+                );
+                txtendtime.setText(String.format("%02d:%02d",
+                        TimeUnit.MILLISECONDS.toMinutes((long) finalTime),
+                        TimeUnit.MILLISECONDS.toSeconds((long) finalTime) -
+                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes((long)
+                                        finalTime)))
+                );
+//                pause.setVisibility(View.VISIBLE);
+//                stop.setVisibility(View.VISIBLE);
+                stop.setEnabled(true);
+//                play.setVisibility(View.INVISIBLE);
+                play.setImageResource(R.drawable.icon_pause);
+
+                seekbar.setProgress((int) startTime);
+                myHandler.postDelayed(UpdateSongTime, 0);
+                playing = true;
+                showNotification();
+            }else{
+                mediaPlayer.pause();
+                startTime = mediaPlayer.getCurrentPosition();
+//                pause.setVisibility(View.INVISIBLE);
+                play.setImageResource(R.drawable.icon_play);
+//                stop.setVisibility(View.VISIBLE);
+                stop.setEnabled(true);
+//                play.setVisibility(View.VISIBLE);
+                cover.clearAnimation();
+                playing=false;
+                showNotification();
             }
-            txtinittime.setText(String.format("%d:%d",
-                    TimeUnit.MILLISECONDS.toMinutes((long) startTime),
-                    TimeUnit.MILLISECONDS.toSeconds((long) startTime) -
-                            TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes((long)
-                                    startTime)))
-            );
-            txtendtime.setText(String.format("%d:%d",
-                    TimeUnit.MILLISECONDS.toMinutes((long) finalTime),
-                    TimeUnit.MILLISECONDS.toSeconds((long) finalTime) -
-                            TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes((long)
-                                    finalTime)))
-            );
-            pause.setVisibility(View.VISIBLE);
-            stop.setVisibility(View.VISIBLE);
-            play.setVisibility(View.INVISIBLE);
 
-            seekbar.setProgress((int)startTime);
-            myHandler.postDelayed(UpdateSongTime,0);
         }
 
 
-        if(id==R.id.pause){
-            mediaPlayer.pause();
-            startTime = mediaPlayer.getCurrentPosition();
-            pause.setVisibility(View.INVISIBLE);
-            stop.setVisibility(View.VISIBLE);
-            play.setVisibility(View.VISIBLE);
-            cover.clearAnimation();
-        }
+//        if(id==R.id.pause){
+//            mediaPlayer.pause();
+//            startTime = mediaPlayer.getCurrentPosition();
+//            pause.setVisibility(View.INVISIBLE);
+//            stop.setVisibility(View.VISIBLE);
+//            play.setVisibility(View.VISIBLE);
+//            cover.clearAnimation();
+//            playing=false;
+//            showNotification();
+//        }
 
 
         if(id==R.id.stop){
@@ -189,15 +261,18 @@ private Runnable UpdateSongTime = new Runnable() {
             startTime=0;
             finalTime=0;
             oneTimeOnly=0;
+            playing=false;
+            play.setImageResource(R.drawable.icon_play);
             try {
                 mediaPlayer.setDataSource(""+song.Location);
                 mediaPlayer.prepare();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            pause.setVisibility(View.INVISIBLE);
-            stop.setVisibility(View.INVISIBLE);
-            play.setVisibility(View.VISIBLE);
+//            pause.setVisibility(View.INVISIBLE);
+//            stop.setVisibility(View.INVISIBLE);
+            stop.setEnabled(false);
+//            play.setVisibility(View.VISIBLE);
             cover.clearAnimation();
         }
 
@@ -209,7 +284,7 @@ private Runnable UpdateSongTime = new Runnable() {
             Song s1 = songs.get(i);
             if (s1.id.equals(song.id)) {
                     pos = i + 1;
-                    if(pos==songs.size()-1){
+                    if(pos==songs.size()){
                         pos=0;
                         i=0;
                     }
@@ -240,6 +315,7 @@ private Runnable UpdateSongTime = new Runnable() {
                 e.printStackTrace();
             }
             if(!mediaPlayer.isPlaying()){
+                playing=false;
                 play.performClick();
             }
             showNotification();
@@ -252,7 +328,7 @@ private Runnable UpdateSongTime = new Runnable() {
                 Song s1 = songs.get(i);
                 if (s1.id.equals(song.id)) {
                     pos = i - 1;
-                    if(pos==0){
+                    if(pos==-1){
                         pos=songs.size()-1;
                         i=songs.size()-1;
                     }
@@ -284,27 +360,58 @@ private Runnable UpdateSongTime = new Runnable() {
                 e.printStackTrace();
             }
             if(!mediaPlayer.isPlaying()){
+                playing=false;
                 play.performClick();
             }
            showNotification();
+        }
+
+
+        if(id==R.id.favourites){
+            if(FavUnfav==false){
+                favourites.setImageResource(R.drawable.ic_favorites);
+                FavUnfav=true;
+            }
+            else{
+                favourites.setImageResource(R.drawable.ic_favorites_colour);
+                FavUnfav=false;
+            }
+        }
+        if(id==R.id.shuffle){
+            if(shuffling==false){
+                shuffle.setImageResource(R.drawable.ic_shuffle_black);
+                shuffling=true;
+            }
+            else{
+                shuffle.setImageResource(R.drawable.ic_shuffle);
+                shuffling=false;
+            }
+
+        }
+        if(id==R.id.repeat){
+            if(repeating==false){
+                repeat.setImageResource(R.drawable.ic_exchange);
+                repeating=true;
+            }
+            else{
+                repeat.setImageResource(R.drawable.ic_repeat_one_black_24dp);
+                repeating=false;
+            }
+
         }
     }
 
 
     @Override
-    protected void onStop() {
-        super.onStop();
-
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
+        unregisterReceiver(myNotificationReceiver);
         mediaPlayer.stop();
         mediaPlayer.reset();
         startTime=0;
         finalTime=0;
         oneTimeOnly=0;
+cancelNotification();
     }
 
     void showNotification(){
@@ -322,40 +429,50 @@ private Runnable UpdateSongTime = new Runnable() {
             notificationManager.createNotificationChannel(notificationChannel);
         }
 
-        Intent intent = new Intent(PlayMusicActivity.this, PlayMusicActivity.class);
-        Intent playIntent=new Intent(PlayMusicActivity.this,ActionReceiver.class);
-        playIntent.putExtra("action","play");
+        Intent intent =new Intent(this,PlayMusicActivity.class);
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(PlayMusicActivity.this, 121, intent, 0);
-        PendingIntent pendingPlay = PendingIntent.getBroadcast(PlayMusicActivity.this, 131, playIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(playIntent);
+//        intent.setAction("activity");
 
+//        intent.setAction("activity");
+        //Intent pauseIntent=new Intent("pause");
+        Intent playIntent=new Intent("play");
+        Intent nextIntent=new Intent("next");
+        Intent prevIntent=new Intent("prev");
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 121, intent, 0);
+        PendingIntent pendingPlay = PendingIntent.getBroadcast(this, 131, playIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        //PendingIntent pendingPause = PendingIntent.getBroadcast(this, 131, pauseIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingNext = PendingIntent.getBroadcast(this, 131, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingPrev = PendingIntent.getBroadcast(this, 131, prevIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        if(playing==true) {
+            action = new NotificationCompat.Action(R.drawable.ic_pause_black_24dp,null,pendingPlay);
+            playing = true;
+        }else {
+            action = new NotificationCompat.Action(R.drawable.ic_play_arrow_black_24dp, null, pendingPlay);
+            playing=false;
+
+        }
         builder = new NotificationCompat.Builder(this, "myId");
         builder.setContentTitle(""+song.title);
         builder.setContentText(""+song.artist);
         builder.setLargeIcon(largeimage);
         builder.setSmallIcon(icon);
         builder.setWhen(when);
-        builder.addAction(R.drawable.ic_skip_previous_black_24dp,null,null)
-        .addAction(R.drawable.ic_play_arrow_black_24dp,null,pendingPlay)
-        .addAction(R.drawable.ic_skip_next_black_24dp,null,null).setOngoing(true);
+        builder.addAction(R.drawable.ic_skip_previous_black_24dp,null,pendingPrev)
+        .addAction(action)
+        .addAction(R.drawable.ic_skip_next_black_24dp,null,pendingNext).setOngoing(true);
         builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle().setShowActionsInCompactView(0,1,2));
         builder.setContentIntent(pendingIntent);
-
+        builder.setAutoCancel(true);
         notification = builder.build();
 
         notificationManager.notify(122, notification);
 
     }
-    class ActionReceiver extends BroadcastReceiver{
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action=intent.getStringExtra("action");
-            Log.i("MyActionReceiver","Receiver Working");
-            if(action.equals("play")){
-
-            }
-        }
+    void cancelNotification(){
+    notificationManager.cancelAll();
     }
+
 }

@@ -5,5 +5,6 @@
     <color name="colorAccent">#ff9966</color>
     <color name="colorWhite">#FFFFFF</color>
     <color name="colorhead">#000000</color>
+    <color name="colorcardback">#90CECACA</color>
 
 </resources>

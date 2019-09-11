@@ -4,10 +4,12 @@ package com.apsinnovations.fithits;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -19,6 +21,7 @@ import android.widget.SearchView;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -33,9 +36,9 @@ public class RecyclerViewFragment extends Fragment {
     MusicAdapter musicAdapter;
     ArrayList<Song> songs;
 View view;
-    TextView textView;
-    LinearLayout indexLayout;
+  
 ProgressDialog progressDialog;
+    boolean layout;
 
 
     public RecyclerViewFragment() {
@@ -49,6 +52,7 @@ ProgressDialog progressDialog;
         //getActivity().getActionBar().setTitle("MyMusic");
         view= inflater.inflate(R.layout.fragment_recycler_view,container,false);
         recyclerView = view.findViewById(R.id.recyclerViewfragment);
+        layout=false;
             new MyAsyncTask().execute();
         setHasOptionsMenu(true);
         return view;
@@ -59,6 +63,31 @@ ProgressDialog progressDialog;
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.search, menu);
         MenuItem menuItem=menu.findItem(R.id.searchview);
+        final MenuItem viewItem=menu.findItem(R.id.action_layout);
+
+
+        viewItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+               if(layout==false) {
+                   viewItem.setIcon(R.drawable.ic_view_list_black_24dp);
+                   GridLayoutManager grid = new GridLayoutManager(getActivity(),2);
+                   recyclerView.setLayoutManager(grid);
+                   musicAdapter = new MusicAdapter(getActivity(), R.layout.card_grid, songs);
+                   recyclerView.setAdapter(musicAdapter);
+                    layout=true;
+               }
+               else if(layout==true){
+                   LinearLayoutManager linear = new LinearLayoutManager(getActivity());
+                   recyclerView.setLayoutManager(linear);
+                   musicAdapter = new MusicAdapter(getActivity(), R.layout.song_card_view, songs);
+                   recyclerView.setAdapter(musicAdapter);
+                   viewItem.setIcon(R.drawable.ic_view_module_black_24dp);
+                   layout=false;
+               }
+                return false;
+            }
+        });
         SearchView searchView= (SearchView) menuItem.getActionView();
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -82,7 +111,10 @@ ProgressDialog progressDialog;
             ContentResolver musicResolver = getActivity().getContentResolver();
             Uri musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
             Uri albumUri = android.provider.MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI;
+            Log.i("offlineURI",""+musicUri);
+        Log.i("offlineURI",""+albumUri);
             Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
+        Log.i("offlineURI",""+musicCursor);
             Cursor albumCursor;
             songs = new ArrayList<Song>();
 

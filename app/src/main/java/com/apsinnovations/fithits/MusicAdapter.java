@@ -45,7 +45,7 @@ private Filter FilterRecords;
     @Override
     public void onBindViewHolder(@NonNull final MusicAdapter.ViewHolder holder, final int position) {
         Song song = objects.get(position);
-        Log.i("Song",""+song);
+        //Log.i("Song",""+song);
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -71,7 +71,7 @@ private Filter FilterRecords;
         holder.txtTitle.setText(song.title);
         holder.txtArtist.setText(song.artist);
     }else{
-            holder.image.setBackgroundResource(R.drawable.profile);
+            holder.image.setBackgroundResource(R.mipmap.ic_launcher);
             holder.txtTitle.setText(song.title);
             holder.txtArtist.setText(song.artist);
         }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:dist="http://schemas.android.com/apk/distribution"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.apsinnovations.fithits">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -19,10 +20,13 @@
         android:largeHeap="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
-
-        <activity android:name=".PlayMusicActivity"
-            android:screenOrientation="portrait"/>
+        android:theme="@style/AppTheme"
+        tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".PlayPunjabiActivity"></activity>
+        <activity android:name=".ProfileActivity" />
+        <activity
+            android:name=".PlayMusicActivity"
+            android:screenOrientation="portrait" />
 
         <service
             android:name=".PlayMusicService"
@@ -32,15 +36,18 @@
             android:name=".NavigationDrawerActivity"
             android:label="@string/title_activity_navigation_drawer"
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar"/>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".BottomNavActivity"
             android:label="@string/title_activity_bottom_nav" />
-        <activity android:name=".signup"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".Login_Activity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".MainActivity"
+        <activity
+            android:name=".signup"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".Login_Activity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -3,10 +3,14 @@ package com.apsinnovations.fithits;
 
 import android.content.ContentResolver;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,22 +21,37 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.storage.FileDownloadTask;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.ListResult;
+import com.google.firebase.storage.StorageReference;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Random;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class OnlineMusicFragment extends Fragment {
-    RecyclerView recyclerView;
-    MusicAdapter musicAdapter;
+
     ArrayList<Song> songs;
-    String url;
+MediaPlayer mediaPlayer;
+    ArrayList<String> arrayList;
+    String current;
+
 
 
     public OnlineMusicFragment() {
@@ -43,82 +62,111 @@ public class OnlineMusicFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
 
-        new MyAsyncTask().execute();
+        for(int i=0;i<OnlineMusic.punjabimusic.size();i++){
+            Log.i("URL-Array",OnlineMusic.punjabimusic.get(i));
+        }
+//        for(int i=0;i<OnlineMusic.punjabimusicpath.size();i++){
+//            Log.i("URLPath-Array",OnlineMusic.punjabimusicpath.get(i));
+//        }
+        new FetchSongsTask().execute("");
         return inflater.inflate(R.layout.fragment_online_music,null);
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        recyclerView=view.findViewById(R.id.onlinerecyclerView);
 
-        url="gs://fithits-2f7b1.appspot.com/";
-        ContentResolver musicResolver = getActivity().getContentResolver();
-        Cursor musicCursor = musicResolver.query(Uri.parse(url), null, null, null, null);
-        songs = new ArrayList<Song>();
 
-        if(musicCursor!=null && musicCursor.moveToFirst()){
 
-            int title = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.TITLE);
-            int artist = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.ARTIST);
-            int location= musicCursor.getColumnIndex
-                    (MediaStore.Audio.Media.DATA);
-            do {
-                String thisTitle = musicCursor.getString(title);
-                String thisArtist = musicCursor.getString(artist);
-                String thisLocation = musicCursor.getString(location);
-                Song song=new Song();
-                //song.putSongData(thisTitle, thisArtist, thisLocation);
-                songs.add(song);
-
-            }
-            while (musicCursor.moveToNext());
-
-            musicAdapter=new MusicAdapter(getActivity(),R.layout.song_card_view,songs);
-            LinearLayoutManager layoutManager1 = new LinearLayoutManager(getActivity());
-            recyclerView.setLayoutManager(layoutManager1);
-            recyclerView.setAdapter(musicAdapter);
-            setRetainInstance(true);
-        }
 
 
     }
-}
 
-
-class MyAsyncTask extends AsyncTask {
+    class FetchSongsTask extends AsyncTask{
 
     @Override
     protected Object doInBackground(Object[] objects) {
-        try{
+        try {
 
-            URL url = new URL("https://beatsapi.media.jio.com/v2_1/beats-api/jio/src/response/home/%7Blanguage%7D");
-
-            URLConnection connection = url.openConnection();
-
-            InputStream inputStream = connection.getInputStream();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-
-            String line = "";
-            StringBuilder builder;
-            builder = new StringBuilder();
-
-
-            while((line = reader.readLine()) !=null){
-                builder.append(line);
-            }
-
-            // We now need to display the data in Toast or Log
-
-        }catch (Exception e){
-            e.printStackTrace();
+                mediaPlayer=new MediaPlayer();
+                current=OnlineMusic.punjabimusic.get(0);
+                mediaPlayer.setDataSource(""+OnlineMusic.punjabimusic.get(0));
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//                mediaPlayer.prepareAsync();
+                mediaPlayer.prepare();
+            } catch (IOException e) {
+                e.printStackTrace();
         }
+
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mediaPlayer) {
+                    Log.i("Music","Prepared");
+                    mediaPlayer.start();
+                }
+            });
+            mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                    Log.i("Music","Error");
+                    mediaPlayer.reset();
+                    return false;
+                }
+            });
+            mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                @Override
+                public void onBufferingUpdate(MediaPlayer mediaPlayer, int i) {
+                    if (i < 0 || i > 100) {
+                        //System.out.println("Doing math: (" + (Math.abs(percent)-1)*100.0 + " / " +Integer.MAX_VALUE+ ")" );
+                        i = (int) Math.round((((Math.abs(i)-1)*100.0/Integer.MAX_VALUE)));
+
+                    }
+                    Log.i("Music","Buffering"+i);
+                }
+            });
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    Log.i("Music","Completed");
+                    mediaPlayer.stop();
+                    mediaPlayer.reset();
+                    int pos=0;
+                    for(int i=0;i<OnlineMusic.punjabimusic.size()-1;i++) {
+                        String s = OnlineMusic.punjabimusic.get(i);
+                        if (s.equals(current)) {
+                            Random random=new Random();
+                            pos = random.nextInt(OnlineMusic.punjabimusic.size());
+                            if(pos==OnlineMusic.punjabimusic.size()){
+                                pos=0;
+                                i=0;
+                            }
+                            break;
+                        }
+                    }
+                    try {
+                        Log.i("Music","Source"+pos);
+                        mediaPlayer.setDataSource(""+OnlineMusic.punjabimusic.get(pos));
+                        current=OnlineMusic.punjabimusic.get(pos);
+                        mediaPlayer.prepare();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            });
+
         return null;
     }
+
+    @Override
+    protected void onPostExecute(Object o) {
+        super.onPostExecute(o);
+
+    }
 }
+
+
+
+}
+
 

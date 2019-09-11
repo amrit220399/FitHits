@@ -11,6 +11,10 @@
         android:id="@+id/navigation_stopwatch"
         android:icon="@drawable/ic_watch_black_24dp"
         android:title="@string/title_Stopwatch" />
+    <item
+        android:id="@+id/step_count"
+        android:icon="@drawable/ic_directions_run_black_24dp"
+        android:title="@string/title_Steps" />
 
     <item
         android:id="@+id/navigation_online"

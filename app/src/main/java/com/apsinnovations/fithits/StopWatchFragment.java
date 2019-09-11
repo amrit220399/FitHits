@@ -1,6 +1,7 @@
 package com.apsinnovations.fithits;
 
 
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
@@ -9,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -27,13 +29,6 @@ import java.util.List;
 public class StopWatchFragment extends Fragment {
     TextView textView ;
 
-    Button start, pause, reset, lap ;
-
-    long MillisecondTime, StartTime, TimeBuff, UpdateTime = 0L ;
-
-    Handler handler;
-
-    int Seconds, Minutes, MilliSeconds ;
     public Runnable runnable = new Runnable() {
 
         public void run() {
@@ -48,16 +43,24 @@ public class StopWatchFragment extends Fragment {
 
             Seconds = Seconds % 60;
 
-            MilliSeconds = (int) (UpdateTime % 1000);
+            MilliSeconds = (int) (UpdateTime % 100);
 
-            textView.setText("" + Minutes + ":"
+            textView.setText("" + String.format("%02d", Minutes) + ":"
                     + String.format("%02d", Seconds) + ":"
-                    + String.format("%03d", MilliSeconds));
+                    + String.format("%02d", MilliSeconds));
 
             handler.postDelayed(this, 0);
         }
 
     };
+    ImageView start,  reset, lap ;
+
+    long MillisecondTime, StartTime, TimeBuff, UpdateTime = 0L ;
+
+    Handler handler;
+
+    int Seconds, Minutes, MilliSeconds ;
+    boolean started=false;
     ListView listView ;
     String[] ListElements = new String[] {  };
     List<String> ListElementsArrayList ;
@@ -81,14 +84,13 @@ public class StopWatchFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         textView = view.findViewById(R.id.textView);
-        start = view.findViewById(R.id.button);
-        pause = view.findViewById(R.id.button2);
-        reset = view.findViewById(R.id.button3);
-        lap = view.findViewById(R.id.button4) ;
+        start = view.findViewById(R.id.start);
+        reset = view.findViewById(R.id.stop);
+        lap = view.findViewById(R.id.lap) ;
         listView = view.findViewById(R.id.listview1);
-
+        lap.setVisibility(View.INVISIBLE);
+        reset.setVisibility(View.INVISIBLE);
         handler = new Handler() ;
-
         ListElementsArrayList = new ArrayList<String>(Arrays.asList(ListElements));
 
         adapter = new MyTimeListAdapter(getContext(),
@@ -98,30 +100,29 @@ public class StopWatchFragment extends Fragment {
 
         listView.setAdapter(adapter);
 
-        start.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                StartTime = SystemClock.uptimeMillis();
-                handler.postDelayed(runnable, 0);
-
-                reset.setEnabled(false);
-
+    start.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            if(started==false) {
+            StartTime = SystemClock.uptimeMillis();
+            handler.postDelayed(runnable, 0);
+            start.setImageResource(R.drawable.ic_stop_pause);
+            reset.setVisibility(View.INVISIBLE);
+            lap.setVisibility(View.VISIBLE);
+            started=true;
             }
-        });
+            else{
+                        TimeBuff += MillisecondTime;
+                        handler.removeCallbacks(runnable);
+                        start.setImageResource(R.drawable.ic_watch_play);
+                        reset.setVisibility(View.VISIBLE);
+                        lap.setVisibility(View.INVISIBLE);
+                        started=false;
+                    }
+        }
+    });
 
-        pause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
 
-                TimeBuff += MillisecondTime;
-
-                handler.removeCallbacks(runnable);
-
-                reset.setEnabled(true);
-
-            }
-        });
 
         reset.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -136,10 +137,11 @@ public class StopWatchFragment extends Fragment {
                 MilliSeconds = 0 ;
 
                 textView.setText("00:00:00");
-
+                lap.setVisibility(View.INVISIBLE);
                 ListElementsArrayList.clear();
 
                 adapter.notifyDataSetChanged();
+                reset.setVisibility(View.INVISIBLE);
             }
         });
 

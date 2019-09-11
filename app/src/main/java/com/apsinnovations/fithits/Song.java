@@ -10,11 +10,13 @@ public class Song implements Serializable, Parcelable {
     public static final Creator<Song> CREATOR = new Creator<Song>() {
         @Override
         public Song createFromParcel(Parcel in) {
+
             return new Song(in);
         }
 
         @Override
         public Song[] newArray(int size) {
+
             return new Song[size];
         }
     };
@@ -70,7 +72,8 @@ public class Song implements Serializable, Parcelable {
 
     @Override
     public int describeContents() {
-        return 0;
+
+         return 0;
     }
 
     @Override
