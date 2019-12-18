@@ -193,7 +193,7 @@ public class NavigationDrawerActivity extends AppCompatActivity
 
 
         } else if (id == R.id.nav_languages) {
-
+            Toast.makeText(this,"Languages will be available soon :)",Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_feedback) {
             Intent Email = new Intent(Intent.ACTION_SEND);
             Email.setType("text/email");
@@ -213,6 +213,8 @@ public class NavigationDrawerActivity extends AppCompatActivity
             startActivity(Intent.createChooser(intent,"Share using"));
         } else if (id == R.id.nav_rate_us) {
 
+        }else if (id == R.id.nav_version) {
+            Toast.makeText(this,"Your version is up to date :)",Toast.LENGTH_LONG).show();
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);

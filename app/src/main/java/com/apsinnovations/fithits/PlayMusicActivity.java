@@ -21,6 +21,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -369,20 +370,25 @@ private Runnable UpdateSongTime = new Runnable() {
 
         if(id==R.id.favourites){
             if(FavUnfav==false){
+                Toast.makeText(this,"Removed from Favourites!",Toast.LENGTH_SHORT).show();
                 favourites.setImageResource(R.drawable.ic_favorites);
                 FavUnfav=true;
             }
             else{
+                Toast.makeText(this,"Added to Favourites :)",Toast.LENGTH_SHORT).show();
                 favourites.setImageResource(R.drawable.ic_favorites_colour);
                 FavUnfav=false;
+
             }
         }
         if(id==R.id.shuffle){
             if(shuffling==false){
+                Toast.makeText(this,"Shuffle OFF",Toast.LENGTH_SHORT).show();
                 shuffle.setImageResource(R.drawable.ic_shuffle_black);
                 shuffling=true;
             }
             else{
+                Toast.makeText(this,"Shuffle ON",Toast.LENGTH_SHORT).show();
                 shuffle.setImageResource(R.drawable.ic_shuffle);
                 shuffling=false;
             }
@@ -390,10 +396,12 @@ private Runnable UpdateSongTime = new Runnable() {
         }
         if(id==R.id.repeat){
             if(repeating==false){
+                Toast.makeText(this,"Loop All",Toast.LENGTH_SHORT).show();
                 repeat.setImageResource(R.drawable.ic_exchange);
                 repeating=true;
             }
             else{
+                Toast.makeText(this,"Loop Once",Toast.LENGTH_SHORT).show();
                 repeat.setImageResource(R.drawable.ic_repeat_one_black_24dp);
                 repeating=false;
             }
